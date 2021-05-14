@@ -1,4 +1,5 @@
 ﻿using System;
+using static NullPropagationVisitor.HelperMethods;
 using System.Linq.Expressions;
 
 namespace NullPropagationVisitor
@@ -19,49 +20,27 @@ namespace NullPropagationVisitor
 
         protected override Expression VisitUnary(UnaryExpression propertyAccess)
         {
-            if (propertyAccess.NodeType == ExpressionType.Convert && !IsNullable(propertyAccess))
-            {
-                var safe = Visit(propertyAccess.Operand);
-                var caller = Expression.Variable(safe.Type, "caller");
-                var assign = Expression.Assign(caller, safe);
+            if (propertyAccess.NodeType == ExpressionType.Convert)
+                return VisitConvert(propertyAccess);
 
-                var tipofinal = MakeNullable(propertyAccess.Type);
-                var d = Expression.Convert(RemoveNullable(caller), propertyAccess.Type);
-                var e = Expression.Convert(d, tipofinal);
+            if (propertyAccess.Operand is MemberExpression member)
+                return VisitMember(member);
 
-                var result = Expression.Condition(
-                        test: Expression.Equal(caller, Expression.Constant(null)),
-                        ifTrue: Expression.Constant(null, tipofinal),
-                        ifFalse: e);
+            if (propertyAccess.Operand is MethodCallExpression method)
+                return VisitMethodCall(method);
 
-                var block = Expression.Block(
-                    variables: new[]
-                    {
-                            caller,
-                    },
-                    expressions: new Expression[]
-                    {
-                            assign,
-                            result,
-                    });
+            if (propertyAccess.Operand is ConditionalExpression condition)
+                return VisitConditional(condition);
 
-                return block;
-            }
+            return base.VisitUnary(propertyAccess);
+        }
 
-            if (propertyAccess.Operand is MemberExpression mem)
-                return VisitMember(mem);
-
-            if (propertyAccess.Operand is MethodCallExpression met)
-                return VisitMethodCall(met);
-
-            if (propertyAccess.Operand is ConditionalExpression cond)
-                return Expression.Condition(
+        protected override Expression VisitConditional(ConditionalExpression cond)
+        {
+            return Expression.Condition(
                         test: cond.Test,
                         ifTrue: MakeNullable(Visit(cond.IfTrue)),
                         ifFalse: MakeNullable(Visit(cond.IfFalse)));
-
-
-            return base.VisitUnary(propertyAccess);
         }
 
         protected override Expression VisitMember(MemberExpression propertyAccess)
@@ -75,6 +54,38 @@ namespace NullPropagationVisitor
                 return base.VisitMethodCall(propertyAccess);
 
             return Common(propertyAccess.Object, propertyAccess);
+        }
+
+        protected virtual Expression VisitConvert(UnaryExpression propertyAccess)
+        {
+            if (propertyAccess.NodeType != ExpressionType.Convert)
+                throw new InvalidOperationException("invalid call");
+
+            var safe = Visit(propertyAccess.Operand);
+            var caller = Expression.Variable(safe.Type, "caller");
+            var assign = Expression.Assign(caller, safe);
+
+            var tipofinal = MakeNullable(propertyAccess.Type);
+            var d = Expression.Convert(RemoveNullable(caller), propertyAccess.Type);
+            var e = Expression.Convert(d, tipofinal);
+
+            var cond = Expression.Condition(
+                    test: Expression.Equal(caller, Expression.Constant(null)),
+                    ifTrue: Expression.Constant(null, tipofinal),
+                    ifFalse: e);
+
+            var block = Expression.Block(
+                        variables: new[]
+                        {
+                            caller,
+                        },
+                        expressions: new Expression[]
+                        {
+                            assign,
+                            cond,
+                        });
+
+            return block;
         }
 
         private BlockExpression Common(Expression instance, Expression propertyAccess)
@@ -100,45 +111,6 @@ namespace NullPropagationVisitor
                             assign,
                             ternary,
                     });
-        }
-
-        private static Expression MakeNullable(Expression ex)
-        {
-            if (IsNullable(ex))
-                return ex;
-
-            return Expression.Convert(ex, MakeNullable(ex.Type));
-        }
-
-        private static Type MakeNullable(Type type)
-        {
-            if (IsNullable(type))
-                return type;
-
-            return typeof(Nullable<>).MakeGenericType(type);
-        }
-
-        private static bool IsNullable(Expression ex)
-        {
-            return IsNullable(ex.Type);
-        }
-
-        private static bool IsNullable(Type type)
-        {
-            return !type.IsValueType || (Nullable.GetUnderlyingType(type) != null);
-        }
-
-        private static bool IsNullableStruct(Expression ex)
-        {
-            return ex.Type.IsValueType && (Nullable.GetUnderlyingType(ex.Type) != null);
-        }
-
-        private static Expression RemoveNullable(Expression ex)
-        {
-            if (IsNullableStruct(ex))
-                return Expression.Convert(ex, ex.Type.GenericTypeArguments[0]);
-
-            return ex;
         }
     }
 }
