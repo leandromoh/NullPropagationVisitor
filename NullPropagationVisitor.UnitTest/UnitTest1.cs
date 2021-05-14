@@ -1,6 +1,7 @@
 using System;
 using System.Linq.Expressions;
 using Xunit;
+using FluentAssertions;
 
 namespace NullPropagationVisitor.UnitTest
 {
@@ -24,9 +25,9 @@ namespace NullPropagationVisitor.UnitTest
 
             var fFunc = fBody.Compile();
 
-            Console.WriteLine(fFunc(null) == null);
-            Console.WriteLine(fFunc("bar") == '3');
-            Console.WriteLine(fFunc("foo") == 'X');
+            fFunc(null).Should().BeNull();
+            fFunc("bar").Should().Be('3');
+            fFunc("foo").Should().Be('X');
         }
 
         [Fact]
@@ -40,8 +41,8 @@ namespace NullPropagationVisitor.UnitTest
                                         parameters: y.Parameters)
                                 .Compile();
 
-            Console.WriteLine(yFunc(null) == null);
-            Console.WriteLine(yFunc("bar") == 3);
+            yFunc(null).Should().BeNull();
+            yFunc("bar").Should().Be(3);
         }
 
         [Fact]
@@ -52,8 +53,8 @@ namespace NullPropagationVisitor.UnitTest
             var yBody = (Expression<Func<char?, string>>)visitor.Visit(y);
             var yFunc = yBody.Compile();
 
-            Console.WriteLine(yFunc(null) == null);
-            Console.WriteLine(yFunc('A') == "A");
+            yFunc(null).Should().BeNull();
+            yFunc('A').Should().Be("A");
         }
 
         [Fact]
@@ -64,8 +65,8 @@ namespace NullPropagationVisitor.UnitTest
             var yBody = (Expression<Func<string, double?>>)visitor.Visit(y);
             var yFunc = yBody.Compile();
 
-            Console.WriteLine(yFunc(null) == null);
-            Console.WriteLine(yFunc("bar") == 3);
+            yFunc(null).Should().BeNull();
+            yFunc("bar").Should().Be(3);
         }
 
         [Fact]
@@ -76,8 +77,8 @@ namespace NullPropagationVisitor.UnitTest
             var yBody = (Expression<Func<string, double?>>)visitor.Visit(y);
             var yFunc = yBody.Compile();
 
-            Console.WriteLine(yFunc(null) == null);
-            Console.WriteLine(yFunc("bar") == 3);
+            yFunc(null).Should().BeNull();
+            yFunc("bar").Should().Be(3);
         }
 
         [Fact]
@@ -89,9 +90,9 @@ namespace NullPropagationVisitor.UnitTest
 
             var fFunc = fBody.Compile();
 
-            Console.WriteLine(fFunc(null) == null);
-            Console.WriteLine(fFunc("bar") == '3');
-            Console.WriteLine(fFunc("foo") == 'X');
+            fFunc(null).Should().BeNull();
+            fFunc("bar").Should().Be('3');
+            fFunc("foo").Should().Be('X');
         }
 
         [Fact]
@@ -102,8 +103,8 @@ namespace NullPropagationVisitor.UnitTest
             var yBody = (Expression<Func<string, double?>>)visitor.Visit(y);
             var yFunc = yBody.Compile();
 
-            Console.WriteLine(yFunc(null) == null);
-            Console.WriteLine(yFunc("bar") == 3);
+            yFunc(null).Should().BeNull();
+            yFunc("bar").Should().Be(3);
         }
     }
 }
