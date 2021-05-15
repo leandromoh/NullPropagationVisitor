@@ -1,6 +1,6 @@
 ﻿using System;
-using static NullPropagationVisitor.HelperMethods;
 using System.Linq.Expressions;
+using static NullPropagationVisitor.HelperMethods;
 
 namespace NullPropagationVisitor
 {
@@ -45,7 +45,11 @@ namespace NullPropagationVisitor
 
         protected override Expression VisitMember(MemberExpression propertyAccess)
         {
-            return Common(propertyAccess.Expression, propertyAccess);
+            return Common(propertyAccess.Expression, caller =>
+            {
+                return MakeNullable(new ExpressionReplacerVisitor(propertyAccess.Expression,
+                IsNullableStruct(propertyAccess.Expression) ? caller : RemoveNullable(caller)).Visit(propertyAccess));
+            });
         }
 
         protected override Expression VisitMethodCall(MethodCallExpression propertyAccess)
@@ -53,7 +57,11 @@ namespace NullPropagationVisitor
             if (propertyAccess.Object == null)
                 return base.VisitMethodCall(propertyAccess);
 
-            return Common(propertyAccess.Object, propertyAccess);
+            return Common(propertyAccess.Object, caller =>
+            {
+                return MakeNullable(new ExpressionReplacerVisitor(propertyAccess.Object,
+                IsNullableStruct(propertyAccess.Object) ? caller : RemoveNullable(caller)).Visit(propertyAccess));
+            });
         }
 
         protected virtual Expression VisitConvert(UnaryExpression propertyAccess)
@@ -61,44 +69,23 @@ namespace NullPropagationVisitor
             if (propertyAccess.NodeType != ExpressionType.Convert)
                 throw new InvalidOperationException("invalid call");
 
-            var safe = Visit(propertyAccess.Operand);
-            var caller = Expression.Variable(safe.Type, "caller");
-            var assign = Expression.Assign(caller, safe);
-
-            var tipofinal = MakeNullable(propertyAccess.Type);
-            var d = Expression.Convert(RemoveNullable(caller), propertyAccess.Type);
-            var e = Expression.Convert(d, tipofinal);
-
-            var cond = Expression.Condition(
-                    test: Expression.Equal(caller, Expression.Constant(null)),
-                    ifTrue: Expression.Constant(null, tipofinal),
-                    ifFalse: e);
-
-            var block = Expression.Block(
-                        variables: new[]
-                        {
-                            caller,
-                        },
-                        expressions: new Expression[]
-                        {
-                            assign,
-                            cond,
-                        });
-
-            return block;
+            return Common(propertyAccess.Operand, caller =>
+            {
+                return Expression.Convert(RemoveNullable(caller), propertyAccess.Type);
+            });
         }
 
-        private BlockExpression Common(Expression instance, Expression propertyAccess)
+        private BlockExpression Common(Expression instance, Func<Expression, Expression> callback)
         {
             var safe = _recursive ? base.Visit(instance) : instance;
             var caller = Expression.Variable(safe.Type, "caller");
             var assign = Expression.Assign(caller, safe);
-            var acess = MakeNullable(new ExpressionReplacerVisitor(instance,
-                IsNullableStruct(instance) ? caller : RemoveNullable(caller)).Visit(propertyAccess));
+            var acess = MakeNullable(callback(caller));
+
             var ternary = Expression.Condition(
-                        test: Expression.Equal(caller, Expression.Constant(null)),
-                        ifTrue: Expression.Constant(null, acess.Type),
-                        ifFalse: acess);
+                test: Expression.Equal(caller, Expression.Constant(null)),
+                ifTrue: Expression.Constant(null, acess.Type),
+                ifFalse: acess);
 
             return Expression.Block(
                     type: acess.Type,

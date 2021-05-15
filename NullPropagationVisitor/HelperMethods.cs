@@ -36,6 +36,11 @@ namespace NullPropagationVisitor
             return ex.Type.IsValueType && (Nullable.GetUnderlyingType(ex.Type) != null);
         }
 
+        public static bool IsReferenceType(Expression ex)
+        {
+            return !ex.Type.IsValueType;
+        }
+
         public static Expression RemoveNullable(Expression ex)
         {
             if (IsNullableStruct(ex))
