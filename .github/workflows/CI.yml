@@ -1,0 +1,22 @@
+name: CI
+
+on: [ pull_request, push ]
+
+jobs:
+  setup-version:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest ]
+        dotnet-version: ['5.0']
+    name: Dotnet ${{ matrix.dotnet }} sample
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+      - run: dotnet build NullPropagationVisitor.UnitTest/NullPropagationVisitor.UnitTest.csproj
+      - run: dotnet test  NullPropagationVisitor.UnitTest/NullPropagationVisitor.UnitTest.csproj
+      
