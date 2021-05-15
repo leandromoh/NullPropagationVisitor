@@ -13,7 +13,7 @@ You can use projects like [ReadableExpressions](https://github.com/agileobjects/
 
 ## Examples of use
 
-Check some examples [here](NullPropagationVisitor.UnitTest/NullPropagationVisitorTest.cs)
+Check some examples of use in [unit tests](NullPropagationVisitor.UnitTest/NullPropagationVisitorTest.cs)
 
 ## Transformation
 
