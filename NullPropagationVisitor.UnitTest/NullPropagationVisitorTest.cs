@@ -80,6 +80,22 @@ namespace NullPropagationVisitor.UnitTest
         }
 
         [Fact]
+        void When_recursive_but_starts_non_nullable_should_throw()
+        {
+            // Arrange
+
+            Expression<Func<Foo, string>> ex = x => x.GetNullWhenIs2();
+
+            // Act
+
+            Action act = () => visitor.Visit(ex);
+
+            // Assert
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("Can not apply operand on type Foo. Only nullable are allowed.");
+        }
+
+        [Fact]
         void When_recursive_and_find_non_nullable_in_the_most_left_should_throw()
         {
             // Arrange
