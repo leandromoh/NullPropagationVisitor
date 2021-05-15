@@ -78,10 +78,15 @@ namespace NullPropagationVisitor
         private BlockExpression Common(Expression instance, Func<Expression, Expression> callback)
         {
             var safe = _recursive ? base.Visit(instance) : instance;
+
+            if (!IsNullable(safe.Type))
+                throw new InvalidOperationException($"Can not apply operand on type {safe.Type.Name}. Only nullable are allowed.");
+
+            // assign expression in the left side of the operator '?.' to a variable to evaluate once
             var caller = Expression.Variable(safe.Type, "caller");
             var assign = Expression.Assign(caller, safe);
-            var acess = MakeNullable(callback(caller));
 
+            var acess = MakeNullable(callback(caller));
             var ternary = Expression.Condition(
                 test: Expression.Equal(caller, Expression.Constant(null)),
                 ifTrue: Expression.Constant(null, acess.Type),
