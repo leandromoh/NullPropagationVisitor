@@ -1,3 +1,7 @@
+[![Nuget](https://img.shields.io/nuget/v/NullPropagationVisitor?style=plastic)](https://www.nuget.org/packages/NullPropagationVisitor/)
+[![Fuget](https://www.fuget.org/packages/NullPropagationVisitor/badge.svg)](https://www.fuget.org/packages/NullPropagationVisitor)
+![GitHub](https://img.shields.io/github/license/leandromoh/NullPropagationVisitor)
+
 # NullPropagationVisitor
 
 [Expression tree](https://docs.microsoft.com/dotnet/csharp/programming-guide/concepts/expression-trees/) is an amazing feature of C#, however it is only support a [limited subset of C# features](https://github.com/dotnet/csharplang/discussions/158).  
