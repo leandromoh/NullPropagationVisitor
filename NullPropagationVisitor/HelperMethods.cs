@@ -5,6 +5,15 @@ namespace NullPropagationVisitor
 {
     public static class HelperMethods
     {
+        private static bool IsValueType(this Type type)
+        {
+#if !NETSTANDARD1_1
+            return type.IsValueType;
+#else
+            return System.Reflection.IntrospectionExtensions.GetTypeInfo(type).IsValueType;
+#endif
+        }
+
         public static Expression MakeNullable(Expression ex)
         {
             if (IsNullable(ex))
@@ -28,17 +37,17 @@ namespace NullPropagationVisitor
 
         public static bool IsNullable(Type type)
         {
-            return !type.IsValueType || (Nullable.GetUnderlyingType(type) != null);
+            return !type.IsValueType() || (Nullable.GetUnderlyingType(type) != null);
         }
 
         public static bool IsNullableStruct(Expression ex)
         {
-            return ex.Type.IsValueType && (Nullable.GetUnderlyingType(ex.Type) != null);
+            return ex.Type.IsValueType() && (Nullable.GetUnderlyingType(ex.Type) != null);
         }
 
         public static bool IsReferenceType(Expression ex)
         {
-            return !ex.Type.IsValueType;
+            return !ex.Type.IsValueType();
         }
 
         public static Expression RemoveNullable(Expression ex)
