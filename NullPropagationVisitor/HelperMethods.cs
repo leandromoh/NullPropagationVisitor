@@ -3,7 +3,7 @@ using System.Linq.Expressions;
 
 namespace NullPropagationVisitor
 {
-    public static class HelperMethods
+    internal static class HelperMethods
     {
         private static bool IsValueType(this Type type)
         {
