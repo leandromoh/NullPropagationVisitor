@@ -15,7 +15,12 @@ namespace NullPropagationVisitor
 
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
-            return Expression.Lambda(Visit(node.Body), node.Parameters);
+            var body = Visit(node.Body);
+
+            if (node.ReturnType.IsAssignableFrom(body.Type))
+                return Expression.Lambda(node.Type, body, node.Parameters);
+
+            return Expression.Lambda(body, node.Parameters);
         }
 
         protected override Expression VisitUnary(UnaryExpression propertyAccess)
