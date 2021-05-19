@@ -303,5 +303,41 @@ namespace NullPropagationVisitor.UnitTest
 
             func(input).Should().Be(expected);
         }
+
+        [Fact]
+        void Visit_preserve_expression_type_when_returning_subtype()
+        {
+            // Arrange
+
+            Expression<Func<string, object>> ex = str => str;
+
+            // Act
+
+            var visited = visitor.Visit(ex);
+
+            // Assert
+
+            visited.Should().BeOfType(ex.GetType());
+        }
+
+#nullable enable
+
+        [Fact]
+        void Visit_preserve_expression_type_when_returning_subtype_on_nullable_context()
+        {
+            // Arrange
+
+            Expression<Func<string, object?>> ex = str => str;
+
+            // Act
+
+            var visited = visitor.Visit(ex);
+
+            // Assert
+
+            visited.Should().BeOfType(ex.GetType());
+        }
+
+#nullable disable
     }
 }
