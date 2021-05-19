@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace NullPropagationVisitor
 {
@@ -10,9 +11,19 @@ namespace NullPropagationVisitor
 #if !NETSTANDARD1_1
             return type.IsValueType;
 #else
-            return System.Reflection.IntrospectionExtensions.GetTypeInfo(type).IsValueType;
+            return type.GetTypeInfo().IsValueType;
 #endif
         }
+
+#if NETSTANDARD1_1
+        public static bool IsAssignableFrom(this Type to, Type from)
+        {
+            var _to = to.GetTypeInfo();
+            var _from = from.GetTypeInfo();
+
+            return _to.IsAssignableFrom(_from);
+        }
+#endif
 
         public static Expression MakeNullable(Expression ex)
         {
